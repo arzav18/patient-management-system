@@ -38,6 +38,10 @@ public class Patient {
         this.id = id;
     }
 
+    public UUID getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
     }

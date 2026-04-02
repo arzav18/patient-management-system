@@ -4,9 +4,10 @@ Content-Type: application/json
 
 {
   "name": "Arzav Jain",
-  "email": "arzav.j@gmail.com",
+  "email": "arzavjain.billing@mail.com",
   "address": "New Delhi, India",
   "dateOfBirth": "2000-09-14",
   "registeredDate": "2026-03-31"
 }
+
 ###
