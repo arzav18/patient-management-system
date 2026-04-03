@@ -3,8 +3,8 @@ POST http://localhost:4000/patients
 Content-Type: application/json
 
 {
-  "name": "Arzav qdwd",
-  "email": "arzav.adwef@mail.com",
+  "name": "Arzav Jain",
+  "email": "arzav.jain@mail.com",
   "address": "New Delhi, India",
   "dateOfBirth": "2000-09-14",
   "registeredDate": "2026-03-31"
