@@ -1,188 +1,285 @@
-# Patient Management System (Microservices)
+# 🏥 Patient Management System (Microservices)
 
-## 🚀 Overview
-
-This project is a **Production-Ready Patient Management System** built using a microservices architecture.
-
-It demonstrates:
-
-* REST APIs (Spring Boot)
-* gRPC communication
-* Docker-based deployment
-* PostgreSQL integration
+![Java](https://img.shields.io/badge/Java-17-blue)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen)
+![Kafka](https://img.shields.io/badge/Kafka-Event%20Driven-orange)
+![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
+![Architecture](https://img.shields.io/badge/Architecture-Microservices-purple)
+![Status](https://img.shields.io/badge/Status-Active-success)
 
 ---
 
-## 🏗️ Architecture
+## 📌 Overview
+
+A **production-style Patient Management System** built using **Microservices Architecture** with:
+
+* REST APIs
+* gRPC communication
+* Kafka event-driven architecture
+* API Gateway (Spring Cloud Gateway)
+* JWT-based authentication
+* Dockerized deployment
+
+---
+
+## 🧱 Architecture Diagram
 
 ```
-Client → patient-service (REST)
-        → PostgreSQL
-        → billing-service (gRPC)
+                ┌────────────────────┐
+                │     Frontend       │
+                └─────────┬──────────┘
+                          │
+                          ▼
+                ┌────────────────────┐
+                │   API Gateway      │
+                │ (Port: 4004)       │
+                └──────┬───────┬─────┘
+                       │       │
+          ┌────────────┘       └────────────┐
+          ▼                                 ▼
+┌────────────────────┐           ┌────────────────────┐
+│   Auth Service     │           │  Patient Service   │
+│   (Port: 4005)     │           │   (Port: 4000)      │
+└─────────┬──────────┘           └─────────┬──────────┘
+          │                                │
+          │ JWT                            │ gRPC
+          ▼                                ▼
+                              ┌────────────────────┐
+                              │  Billing Service   │
+                              │   (Port: 9001)     │
+                              └────────────────────┘
+
+                     ┌────────────────────┐
+                     │       Kafka        │
+                     │   (Event Broker)   │
+                     └─────────┬──────────┘
+                               ▼
+                     ┌────────────────────┐
+                     │ Analytics Service │
+                     └────────────────────┘
+
+                     ┌────────────────────┐
+                     │   PostgreSQL DBs  │
+                     └────────────────────┘
 ```
+
+---
+
+## 🧩 Microservices
+
+### 🔹 API Gateway
+
+* Entry point for all requests
+* Routes traffic to services
+* JWT validation (planned)
+
+---
+
+### 🔹 Auth Service
+
+* Handles login
+* Generates JWT tokens
+* Connects to PostgreSQL
+
+---
+
+### 🔹 Patient Service
+
+* CRUD operations
+* Publishes Kafka events
+* Calls billing-service via gRPC
+
+---
+
+### 🔹 Billing Service
+
+* gRPC-based billing creation
+* Future Kafka consumer
+
+---
+
+### 🔹 Analytics Service
+
+* Kafka consumer
+* Processes patient events
 
 ---
 
 ## ⚙️ Tech Stack
 
-* Java 17 / 21
-* Spring Boot
-* Spring Data JPA
-* PostgreSQL
-* Docker
-* gRPC
-* Protobuf
-* Maven
-
----
-
-## 📦 Services
-
-### 1. patient-service
-
-* Port: 4000
-* Features:
-
-  * Create, update, delete patients
-  * Stores data in PostgreSQL
-  * Calls billing-service via gRPC
-
----
-
-### 2. billing-service
-
-* Ports:
-
-  * 4001 (HTTP)
-  * 9001 (gRPC)
-* Features:
-
-  * Creates billing account via gRPC
-
----
-
-### 3. PostgreSQL
-
-* Port: 5000
-* Used for patient data storage
+| Category         | Technology           |
+| ---------------- | -------------------- |
+| Language         | Java 17              |
+| Framework        | Spring Boot          |
+| Gateway          | Spring Cloud Gateway |
+| Messaging        | Apache Kafka         |
+| Communication    | REST + gRPC          |
+| Database         | PostgreSQL           |
+| Containerization | Docker               |
+| Build Tool       | Maven                |
 
 ---
 
 ## 🐳 Docker Setup
 
-### Create Network
+### 🔑 Rule
 
-```bash
-docker network create patient-network
+```
+❌ localhost (inside containers)
+✅ container-name (Docker DNS)
 ```
 
 ---
 
-### Run PostgreSQL
+## 🔌 Ports
+
+| Service         | Port        |
+| --------------- | ----------- |
+| API Gateway     | 4004        |
+| Patient Service | 4000        |
+| Auth Service    | 4005        |
+| Billing Service | 9001        |
+| Kafka           | 9092 / 9094 |
+| PostgreSQL      | 5000 / 5001 |
+
+---
+
+## 🚀 Run Locally (Docker)
+
+### 1️⃣ Create Network
 
 ```bash
-docker run -d \
---name patient-service-db \
---network patient-network \
--p 5000:5432 \
--e POSTGRES_DB=db \
--e POSTGRES_USER=admin_viewer \
--e POSTGRES_PASSWORD=password \
-postgres:15
+docker network create internal
 ```
 
 ---
 
-### Build Services
-
-```bash
-cd patient-service
-./mvnw clean package -DskipTests
-docker build -t patient-service .
-
-cd ../billing-service
-./mvnw clean package -DskipTests
-docker build -t billing-service .
-```
-
----
-
-### Run Services
+### 2️⃣ Start Databases
 
 ```bash
 docker run -d \
---name billing-service \
---network patient-network \
--p 4001:4001 \
--p 9001:9001 \
-billing-service
+  --name patient-service-db \
+  --network internal \
+  -e POSTGRES_DB=db \
+  -e POSTGRES_USER=admin_viewer \
+  -e POSTGRES_PASSWORD=password \
+  -p 5000:5432 postgres:15
 
 docker run -d \
---name patient-service \
---network patient-network \
--p 4000:4000 \
-patient-service
+  --name auth-service-db \
+  --network internal \
+  -e POSTGRES_DB=db \
+  -e POSTGRES_USER=admin_user \
+  -e POSTGRES_PASSWORD=password \
+  -p 5001:5432 postgres:15
 ```
 
 ---
 
-## 🔗 gRPC Configuration
+### 3️⃣ Start Kafka
 
-In `patient-service`:
-
-```properties
-billing.service.address=billing-service
-billing.service.grpc.port=9001
+```bash
+docker run -d \
+  --name kafka \
+  --network internal \
+  -p 9092:9092 \
+  -p 9094:9094 \
+  apache/kafka
 ```
 
 ---
 
-## 📌 Important Notes
+### 4️⃣ Build Services
 
-### ❗ Docker Networking
-
-* Use service name for communication
-* Do NOT use `localhost`
-
----
-
-### ❗ Build Strategy
-
-* JAR is built locally using Maven
-* Docker only runs the JAR
-
----
-
-## 🧪 API Example
-
-### Create Patient
-
-```http
-POST http://localhost:4000/patients
+```bash
+docker build -t patient-service ./patient-service
+docker build -t billing-service ./billing-service
+docker build -t analytics-service ./analytics-service
+docker build -t auth-service ./auth-service
+docker build -t api-gateway ./api-gateway
 ```
 
 ---
 
-## ✅ Current Status
+### 5️⃣ Run Services
 
-* REST APIs working
-* PostgreSQL connected
-* gRPC communication working
-* Docker setup complete
+```bash
+docker run -d --name patient-service --network internal -p 4000:4000 patient-service
+docker run -d --name billing-service --network internal -p 9001:9001 billing-service
+docker run -d --name analytics-service --network internal analytics-service
+docker run -d --name auth-service --network internal -p 4005:4005 auth-service
+docker run -d --name api-gateway --network internal -p 4004:4004 api-gateway
+```
 
 ---
 
-## 🔮 Future Enhancements
+## 🔐 Authentication Flow
 
-* Docker Compose
-* API Gateway
-* Service Discovery
-* Circuit Breaker
-* Centralized Logging
-* Kubernetes deployment
+1. Login:
+
+```
+POST /auth/login
+```
+
+2. Receive JWT:
+
+```
+Authorization: Bearer <token>
+```
+
+3. Access APIs via Gateway
+
+---
+
+## 📡 API Endpoints
+
+### Auth
+
+```
+POST /auth/login
+```
+
+### Patient
+
+```
+GET    /api/patients
+POST   /api/patients
+PUT    /api/patients/{id}
+DELETE /api/patients/{id}
+```
+
+### Analytics
+
+```
+GET /api/analytics
+```
+
+---
+
+## 🧠 Key Learnings
+
+* Microservices design (sync + async)
+* Docker networking
+* Kafka event-driven systems
+* API Gateway routing
+* JWT-based auth
+* Debugging distributed systems
+
+---
+
+## ⚠️ Common Issues
+
+| Issue                | Cause                  |
+| -------------------- | ---------------------- |
+| Connection refused   | Service not running    |
+| UnknownHostException | Wrong network          |
+| Auth failed          | Wrong DB credentials   |
+| Kafka issues         | Wrong bootstrap server |
 
 ---
 
 ## 👨‍💻 Author
 
-Arzav Jain
+Built as a **production-style backend system** to simulate real-world distributed architecture.
+
+---
